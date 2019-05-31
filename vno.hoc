@@ -1,0 +1,50 @@
+load_file("nrngui.hoc")
+cvode_active(1)
+
+celsius = 22
+Vrest = -70
+create soma, dendrite
+soma {diam=14 L=14 nseg=1}
+dendrite {diam=1.5 L=70 nseg=6}
+connect soma(1), dendrite(0) 
+tstop = 5000
+
+areatot=0
+forall {insert pas e_pas=Vrest Ra=150 cm=1 g_pas=cm/155000
+insert kavn ek=-75 gbar_kavn=0.00215
+insert navn ena=50 gbar_navn=0.012
+for (x) {areatot=areatot+area(x)}
+}
+access soma
+print "area ", areatot
+
+objref stimulus, pattern, nc, istim
+
+proc init() {
+      forall {v=Vrest}
+	finitialize(Vrest)
+      fcurrent()
+      forall for(x) {e_pas(x)=v(x)+(ina(x)+ik(x))/g_pas(x)}
+	cvode.re_init()
+}
+
+
+
+pattern = new NetStim(.5)
+pattern.number = 5
+pattern.interval = 10
+pattern.start = 1
+
+istim = new IClamp(.5)
+istim.del = 500
+istim.amp = 0.002
+istim.dur = 2000
+
+stimulus = new Exp2Syn(.5)
+stimulus.e = 0
+stimulus.tau1 = 4
+stimulus.tau2 = 5
+
+nc = new NetCon(pattern, stimulus, 0, 0, 0e-3)
+
+load_file("vno.ses")
